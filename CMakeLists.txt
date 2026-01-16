@@ -1,6 +1,35 @@
 cmake_minimum_required(VERSION 3.26 FATAL_ERROR)
-project(FlagGems LANGUAGES CXX VERSION 0.1.0)
+
+# ==============================================================================
+# Backend Selection
+# ==============================================================================
+set(BACKEND "CUDA" CACHE STRING "Target backend: CUDA, IX, MUSA, NPU")
+set_property(CACHE BACKEND PROPERTY STRINGS "CUDA" "IX" "MUSA" "NPU")
+
+if(NOT BACKEND MATCHES "^(CUDA|IX|MUSA|NPU)$")
+    message(FATAL_ERROR "Invalid BACKEND: ${BACKEND}")
+endif()
+message(STATUS "Building FlagGems with backend: ${BACKEND}")
+
+# NPU does not need CUDA language
+if(BACKEND STREQUAL "NPU")
+    project(FlagGems LANGUAGES CXX VERSION 0.1.0)
+else()
+    project(FlagGems LANGUAGES CUDA CXX VERSION 0.1.0)
+endif()
+
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/cmake)
+
+# ------------------------------- Backend compile definitions -------------------------------
+if(BACKEND STREQUAL "CUDA")
+    add_compile_definitions(BACKEND_CUDA)
+elseif(BACKEND STREQUAL "IX")
+    add_compile_definitions(BACKEND_IX)
+elseif(BACKEND STREQUAL "NPU")
+    add_compile_definitions(BACKEND_NPU)
+elseif(BACKEND STREQUAL "MUSA")
+    add_compile_definitions(BACKEND_MUSA)
+endif()
 
 # ------------------------------- project-wide settings -------------------------------
 set(CMAKE_CXX_STANDARD 17) # for fold-expression
@@ -41,20 +70,29 @@ endif()
 
 message(STATUS "Building flag gems with C extensions")
 include(FetchContent)
-# dependencies: cuda toolkit
-find_package(CUDAToolkit REQUIRED)
+
+# --------------------------- Backend-specific dependencies ---------------------------
+if(BACKEND STREQUAL "CUDA" OR BACKEND STREQUAL "IX")
+    find_package(CUDAToolkit REQUIRED)
+elseif(BACKEND STREQUAL "NPU")
+    include(BackendNPU)
+elseif(BACKEND STREQUAL "MUSA")
+    include(BackendMUSA)
+endif()
+
 # dependencies: python
 find_package(Python REQUIRED COMPONENTS Interpreter Development)
 # torch
 find_package(Torch MODULE REQUIRED) # This is the FindTorch.cmake
-# dependencies: json
+
+# dependencies: triton_jit
 if(FLAGGEMS_USE_EXTERNAL_TRITON_JIT)
   find_package(TritonJIT 0.1.0 CONFIG REQUIRED)
 else()
   set(TRITON_JIT_INSTALL ON) # install triton jit
   FetchContent_Declare(TritonJIT
     GIT_REPOSITORY https://github.com/flagos-ai/libtriton_jit
-    # SOURCE_DIR <your local source dir of libtriton_jit>
+    GIT_TAG multi-backend
   )
   FetchContent_MakeAvailable(TritonJIT)
 endif()

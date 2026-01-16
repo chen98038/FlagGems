@@ -2,6 +2,7 @@
 #include "torch/python.h"
 
 #include "flag_gems/operators.h"
+#include "flag_gems/backend/dispatch_macros.h"
 
 // TODO: use pytorch's argparse utilities to generate CPython bindings, since it is more efficient than
 // bindings provided by torch library, since it is in a boxed fashion
@@ -131,7 +132,7 @@ TORCH_LIBRARY(flag_gems, m) {
       "pin_memory=None, bool non_blocking=False, MemoryFormat? memory_format=None) -> Tensor");
 }
 
-TORCH_LIBRARY_IMPL(flag_gems, CUDA, m) {
+FLAG_GEMS_LIBRARY_IMPL(flag_gems, m) {
   m.impl("exponential_", TORCH_FN(exponential_));
   // blas
   m.impl("addmm", TORCH_FN(addmm));

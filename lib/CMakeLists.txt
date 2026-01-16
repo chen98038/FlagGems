@@ -34,14 +34,35 @@ if (TRITON_GE_3P5)
   target_compile_definitions(operators PRIVATE TRITON_GE_3P5)
 endif()
 
+# Force C++20 for multi-backend libtriton_jit support (uses concepts)
+set_target_properties(operators PROPERTIES
+  CXX_STANDARD 20
+  CXX_STANDARD_REQUIRED ON
+)
+target_compile_options(operators PRIVATE -std=c++20)
+
 target_include_directories(operators
   PUBLIC
     $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:include>)
 
-target_link_libraries(operators
-  PUBLIC Torch::Torch
-  PRIVATE TritonJIT::triton_jit)
+# Backend conditional linking
+if(BACKEND STREQUAL "CUDA" OR BACKEND STREQUAL "IX")
+    target_link_libraries(operators
+      PUBLIC Torch::Torch
+      PRIVATE TritonJIT::triton_jit CUDA::cuda_driver)
+elseif(BACKEND STREQUAL "NPU")
+    target_link_npu_libraries(operators)
+    target_link_libraries(operators
+      PUBLIC Torch::Torch
+      PRIVATE TritonJIT::triton_jit)
+elseif(BACKEND STREQUAL "MUSA")
+    target_link_musa_libraries(operators)
+    target_link_libraries(operators
+      PUBLIC Torch::Torch
+      PRIVATE TritonJIT::triton_jit)
+endif()
+
 add_library(FlagGems::operators ALIAS operators)
 
 
