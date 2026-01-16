@@ -50,17 +50,16 @@ target_include_directories(operators
 if(BACKEND STREQUAL "CUDA" OR BACKEND STREQUAL "IX")
     target_link_libraries(operators
       PUBLIC Torch::Torch
-      PRIVATE TritonJIT::triton_jit CUDA::cuda_driver)
+      PUBLIC TritonJIT::triton_jit
+      PRIVATE CUDA::cuda_driver)
 elseif(BACKEND STREQUAL "NPU")
     target_link_npu_libraries(operators)
     target_link_libraries(operators
-      PUBLIC Torch::Torch
-      PRIVATE TritonJIT::triton_jit)
+      PUBLIC Torch::Torch TritonJIT::triton_jit)
 elseif(BACKEND STREQUAL "MUSA")
     target_link_musa_libraries(operators)
     target_link_libraries(operators
-      PUBLIC Torch::Torch
-      PRIVATE TritonJIT::triton_jit)
+      PUBLIC Torch::Torch TritonJIT::triton_jit)
 endif()
 
 add_library(FlagGems::operators ALIAS operators)
