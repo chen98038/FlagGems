@@ -2,7 +2,7 @@
 #include "flag_gems/utils.h"
 
 #include <iostream>
-#include "c10/cuda/CUDAStream.h"
+#include "flag_gems/backend/stream_adapter.h"
 #include "triton_jit/triton_jit_function.h"
 
 namespace flag_gems {
@@ -28,8 +28,7 @@ at::Tensor bmm(const at::Tensor& A, const at::Tensor& B) {
                                       "bmm_kernel");
 
   c10::DeviceGuard guard(out.device());
-  c10::cuda::CUDAStream stream = c10::cuda::getCurrentCUDAStream();
-  CUstream raw_stream = static_cast<CUstream>(stream.stream());
+  auto raw_stream = stream::getCurrentStream();
   const int GROUP_M = 8;
   const int TILE_M = 128;
   const int TILE_N = 128;

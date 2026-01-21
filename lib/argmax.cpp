@@ -3,7 +3,7 @@
 
 #include <iostream>
 #include "ATen/WrapDimUtils.h"
-#include "c10/cuda/CUDAStream.h"
+#include "flag_gems/backend/stream_adapter.h"
 #include "triton_jit/triton_jit_function.h"
 
 namespace flag_gems {
@@ -36,7 +36,7 @@ at::Tensor argmax(const at::Tensor &self, std::optional<int64_t> dim, bool keepd
                                         "argmax_kernel_2");
 
     c10::DeviceGuard guard(self.device());
-    c10::cuda::CUDAStream stream = c10::cuda::getCurrentCUDAStream();
+    auto stream = stream::getCurrentStream();
 
     f1(stream,
        mid_size,
@@ -103,7 +103,7 @@ at::Tensor argmax(const at::Tensor &self, std::optional<int64_t> dim, bool keepd
         TritonJITFunction::get_instance(std::string(utils::get_flag_gems_src_path() / "ops" / "argmax.py"),
                                         "argmax_kernel_non_inner");
     c10::DeviceGuard guard(self.device());
-    c10::cuda::CUDAStream stream = c10::cuda::getCurrentCUDAStream();
+    auto stream = stream::getCurrentStream();
     f(stream,
       grid_x,
       grid_y,
@@ -125,7 +125,7 @@ at::Tensor argmax(const at::Tensor &self, std::optional<int64_t> dim, bool keepd
         TritonJITFunction::get_instance(std::string(utils::get_flag_gems_src_path() / "ops" / "argmax.py"),
                                         "argmax_kernel_inner");
     c10::DeviceGuard guard(self.device());
-    c10::cuda::CUDAStream stream = c10::cuda::getCurrentCUDAStream();
+    auto stream = stream::getCurrentStream();
     f(stream, grid_x, 1, 1, num_warps, num_stages, contiguous_self, out, M, N, tile_n, ONE_TILE_PER_CTA);
   }
 

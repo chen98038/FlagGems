@@ -6,7 +6,7 @@
 #include <c10/util/Optional.h>
 #include <torch/torch.h>
 #include <iostream>
-#include "c10/cuda/CUDAStream.h"
+#include "flag_gems/backend/stream_adapter.h"
 #include "flag_gems/operators.h"
 #include "flag_gems/utils.h"
 #include "triton_jit/triton_jit_function.h"
@@ -51,11 +51,15 @@ std::string get_vendor_name_simulated() {
   return "nvidia";
 }
 at::Device get_current_torch_device() {
+#if defined(BACKEND_MUSA)
+  return at::Device(c10::DeviceType::PrivateUse1, c10::musa::current_device());
+#else
   if (torch::cuda::is_available()) {
     return at::Device(at::kCUDA, at::cuda::current_device());
   } else {
     return at::Device(at::kCPU);
   }
+#endif
 }
 std::pair<uint64_t, uint64_t> philox_backend_seed_offset(
     int64_t increment, c10::optional<at::Generator> generator_opt = c10::nullopt) {
@@ -124,8 +128,7 @@ at::Tensor &exponential_(at::Tensor &self, double lambd, c10::optional<at::Gener
       "fused_exponential_kernel");
 
   c10::DeviceGuard guard(x_.device());
-  c10::cuda::CUDAStream stream = c10::cuda::getCurrentCUDAStream();
-  CUstream raw_stream = static_cast<CUstream>(stream.stream());
+  auto raw_stream = stream::getCurrentStream();
   f(raw_stream,
     grid_x,
     /* grid_y = */ 1,

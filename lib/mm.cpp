@@ -2,10 +2,12 @@
 #include "flag_gems/operators.h"
 #include "flag_gems/utils.h"
 
+#if !defined(BACKEND_MUSA)
 #include <ATen/cuda/CUDAContext.h>
+#endif
 #include <iostream>
 #include <tuple>
-#include "c10/cuda/CUDAStream.h"
+#include "flag_gems/backend/stream_adapter.h"
 #include "triton_jit/triton_jit_function.h"
 
 namespace flag_gems {
@@ -65,8 +67,7 @@ void streamk_mm_tensor(const at::Tensor &a,
 
   // device / stream
   c10::DeviceGuard guard(c.device());
-  c10::cuda::CUDAStream stream = c10::cuda::getCurrentCUDAStream();
-  CUstream raw_stream = static_cast<CUstream>(stream.stream());
+  auto raw_stream = stream::getCurrentStream();
 
   if (number_cooperative_tiles > 0) {
     // mini wave handling
@@ -208,8 +209,7 @@ void general_mm_tensor(
                                       "mm_kernel_general");
 
   c10::DeviceGuard guard(c.device());
-  c10::cuda::CUDAStream stream = c10::cuda::getCurrentCUDAStream();
-  CUstream raw_stream = static_cast<CUstream>(stream.stream());
+  auto raw_stream = stream::getCurrentStream();
 
   unsigned int grid_x = cdiv(M, BLOCK_M) * cdiv(N, BLOCK_N);
   f(/* CUstream = */ raw_stream,

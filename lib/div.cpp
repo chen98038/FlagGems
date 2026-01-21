@@ -1,7 +1,7 @@
 #include "flag_gems/operators.h"
 #include "flag_gems/utils.h"
+#include "flag_gems/backend/stream_adapter.h"
 
-#include <c10/cuda/CUDAStream.h>
 #include <c10/util/TypeTraits.h>
 #include <iostream>
 #include "triton_jit/triton_jit_function.h"
@@ -30,8 +30,7 @@ at::Tensor full_like_cpp_scalar(const at::Tensor& x,
                                       "full_func_scalar");
 
   c10::DeviceGuard guard(device);
-  c10::cuda::CUDAStream stream = c10::cuda::getCurrentCUDAStream();
-  CUstream raw_stream = static_cast<CUstream>(stream.stream());
+  auto raw_stream = stream::getCurrentStream();
 
   constexpr int BLOCK_SIZE = 1024;
   int64_t num_elements = out.numel();
@@ -79,8 +78,7 @@ at::Tensor true_div(const at::Tensor& a, const at::Tensor& b) {
   int64_t n = out.numel();
   int num_blocks = (n + tile_size - 1) / tile_size;
 
-  c10::cuda::CUDAStream stream = c10::cuda::getCurrentCUDAStream();
-  CUstream raw_stream = static_cast<CUstream>(stream.stream());
+  auto raw_stream = stream::getCurrentStream();
   c10::DeviceGuard guard(out.device());
 
   f(raw_stream, num_blocks, 1, 4, 2, 0, an, bn, out, n, tile_size);
@@ -113,8 +111,7 @@ at::Tensor true_div_(at::Tensor& a_, const at::Tensor& b_) {
   int64_t tile_size = 1024;
   int num_blocks = (num + tile_size - 1) / tile_size;
 
-  c10::cuda::CUDAStream stream = c10::cuda::getCurrentCUDAStream();
-  CUstream raw_stream = static_cast<CUstream>(stream.stream());
+  auto raw_stream = stream::getCurrentStream();
   c10::DeviceGuard guard(a_.device());
 
   f(raw_stream, num_blocks, 1, 4, 2, 0, a_broadcast, b_broadcast, out, num, tile_size);
@@ -158,8 +155,7 @@ at::Tensor trunc_div(const at::Tensor& a, const at::Tensor& b) {
   int64_t n = out.numel();
   int num_blocks = (n + tile_size - 1) / tile_size;
 
-  c10::cuda::CUDAStream stream = c10::cuda::getCurrentCUDAStream();
-  CUstream raw_stream = static_cast<CUstream>(stream.stream());
+  auto raw_stream = stream::getCurrentStream();
   c10::DeviceGuard guard(out.device());
 
   f(raw_stream, num_blocks, 1, 4, 2, 0, an, bn, out, n, tile_size);
@@ -191,8 +187,7 @@ at::Tensor trunc_div_(at::Tensor& a_, const at::Tensor& b_) {
   int64_t tile_size = 1024;
   int num_blocks = (num + tile_size - 1) / tile_size;
 
-  c10::cuda::CUDAStream stream = c10::cuda::getCurrentCUDAStream();
-  CUstream raw_stream = static_cast<CUstream>(stream.stream());
+  auto raw_stream = stream::getCurrentStream();
   c10::DeviceGuard guard(a_.device());
 
   f(raw_stream, num_blocks, 1, 4, 2, 0, a, b, a_, num, tile_size);
@@ -221,8 +216,7 @@ at::Tensor launch_floor_div_kernel(const at::Tensor& a_, const at::Tensor& b_, b
   int64_t n = out.numel();
   int num_blocks = (n + tile_size - 1) / tile_size;
 
-  c10::cuda::CUDAStream stream = c10::cuda::getCurrentCUDAStream();
-  CUstream raw_stream = static_cast<CUstream>(stream.stream());
+  auto raw_stream = stream::getCurrentStream();
   c10::DeviceGuard guard(out.device());
   // launch Triton kernel
   f(raw_stream, num_blocks, 1, 4, 2, 0, a, b, out, n, tile_size);
@@ -289,8 +283,7 @@ at::Tensor launch_floor_div_kernel_(at::Tensor& a_, const at::Tensor& b_, bool u
   int64_t tile_size = 1024;
   int num_blocks = (num + tile_size - 1) / tile_size;
 
-  c10::cuda::CUDAStream stream = c10::cuda::getCurrentCUDAStream();
-  CUstream raw_stream = static_cast<CUstream>(stream.stream());
+  auto raw_stream = stream::getCurrentStream();
   c10::DeviceGuard guard(a_.device());
 
   f(raw_stream, num_blocks, 1, 4, 2, 0, a.to(out_dtype), b.to(out_dtype), a_, num, N, tile_size);
@@ -341,9 +334,8 @@ at::Tensor div_mode(const at::Tensor& a_,
   const int num_warps = 8;
   const int num_stages = 1;
 
-  c10::cuda::CUDAStream stream = c10::cuda::getCurrentCUDAStream();
   c10::DeviceGuard guard(out.device());
-  CUstream raw_stream = static_cast<CUstream>(stream.stream());
+  auto raw_stream = stream::getCurrentStream();
 
   f(raw_stream, num_blocks, 1, 4, 2, 0, a, b, out, n, tile_size);
 
@@ -387,8 +379,7 @@ at::Tensor div_mode_(at::Tensor& a_, const at::Tensor& b_, const c10::optional<s
   int64_t tile_size = 1024;
   int num_blocks = (num + tile_size - 1) / tile_size;
 
-  c10::cuda::CUDAStream stream = c10::cuda::getCurrentCUDAStream();
-  CUstream raw_stream = static_cast<CUstream>(stream.stream());
+  auto raw_stream = stream::getCurrentStream();
   c10::DeviceGuard guard(a_.device());
 
   at::Tensor b_vec = b.to(out_dtype).view({num / a.size(0)});
@@ -412,8 +403,7 @@ at::Tensor remainder_tt(const at::Tensor& a_, const at::Tensor& b_) {
   int64_t n = out.numel();
   int num_blocks = (n + tile_size - 1) / tile_size;
 
-  c10::cuda::CUDAStream stream = c10::cuda::getCurrentCUDAStream();
-  CUstream raw_stream = static_cast<CUstream>(stream.stream());
+  auto raw_stream = stream::getCurrentStream();
   c10::DeviceGuard guard(out.device());
 
   f(raw_stream, num_blocks, 1, 4, 2, 0, a, b, out, n, tile_size);

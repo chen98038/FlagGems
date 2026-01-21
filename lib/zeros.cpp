@@ -2,7 +2,7 @@
 #include "flag_gems/utils.h"
 
 #include <iostream>
-#include "c10/cuda/CUDAStream.h"
+#include "flag_gems/backend/stream_adapter.h"
 #include "triton_jit/triton_jit_function.h"
 
 namespace flag_gems {
@@ -43,8 +43,7 @@ at::Tensor zeros(at::IntArrayRef size,
       TritonJITFunction::get_instance(std::string(utils::get_triton_src_path() / "zeros.py"), "zeros_kernel");
 
   c10::DeviceGuard guard(out.device());
-  c10::cuda::CUDAStream stream = c10::cuda::getCurrentCUDAStream();
-  CUstream raw_stream = static_cast<CUstream>(stream.stream());
+  auto raw_stream = stream::getCurrentStream();
 
   f(raw_stream,
     num_blocks,

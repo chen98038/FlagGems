@@ -1,7 +1,13 @@
 # dependencies: torch
 # use the current python interpreter's torch installation
 if (NOT DEFINED Torch_ROOT)
-  execute_process(COMMAND ${Python_EXECUTABLE} "-c" "import torch;print(torch.utils.cmake_prefix_path)"
+  # Load libittnotify.so via ctypes to provide iJIT_NotifyEvent symbol for torch
+  # without using LD_PRELOAD (which causes triton to segfault)
+  execute_process(COMMAND ${Python_EXECUTABLE} "-c" "
+import ctypes,os
+p=os.path.join(os.environ.get('CONDA_PREFIX',''),'lib','libittnotify.so')
+ctypes.CDLL(p,mode=ctypes.RTLD_GLOBAL) if os.path.exists(p) else None
+import torch;print(torch.utils.cmake_prefix_path)"
                   OUTPUT_VARIABLE Torch_ROOT
                   OUTPUT_STRIP_TRAILING_WHITESPACE
                   COMMAND_ECHO STDOUT

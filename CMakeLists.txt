@@ -11,8 +11,8 @@ if(NOT BACKEND MATCHES "^(CUDA|IX|MUSA|NPU)$")
 endif()
 message(STATUS "Building FlagGems with backend: ${BACKEND}")
 
-# NPU does not need CUDA language
-if(BACKEND STREQUAL "NPU")
+# NPU and MUSA do not need CUDA language
+if(BACKEND STREQUAL "NPU" OR BACKEND STREQUAL "MUSA")
     project(FlagGems LANGUAGES CXX VERSION 0.1.0)
 else()
     project(FlagGems LANGUAGES CUDA CXX VERSION 0.1.0)
@@ -71,6 +71,9 @@ endif()
 message(STATUS "Building flag gems with C extensions")
 include(FetchContent)
 
+# dependencies: python (must be before backend includes that need Python_EXECUTABLE)
+find_package(Python REQUIRED COMPONENTS Interpreter Development)
+
 # --------------------------- Backend-specific dependencies ---------------------------
 if(BACKEND STREQUAL "CUDA" OR BACKEND STREQUAL "IX")
     find_package(CUDAToolkit REQUIRED)
@@ -79,9 +82,6 @@ elseif(BACKEND STREQUAL "NPU")
 elseif(BACKEND STREQUAL "MUSA")
     include(BackendMUSA)
 endif()
-
-# dependencies: python
-find_package(Python REQUIRED COMPONENTS Interpreter Development)
 # torch
 find_package(Torch MODULE REQUIRED) # This is the FindTorch.cmake
 

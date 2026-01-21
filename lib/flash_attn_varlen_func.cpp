@@ -1,9 +1,13 @@
 #include <ATen/ATen.h>
+#if defined(BACKEND_MUSA)
+#include <musa_runtime_api.h>
+#else
 #include <cuda_runtime_api.h>
+#endif
 #include <cmath>
 #include <limits>
 #include <tuple>
-#include "c10/cuda/CUDAStream.h"
+#include "flag_gems/backend/stream_adapter.h"
 #include "c10/util/Optional.h"
 #include "flag_gems/device_info.h"
 #include "flag_gems/operators.h"
@@ -378,8 +382,7 @@ mha_varlan_fwd_internal(const at::Tensor& q,
     const triton_jit::TritonJITFunction& f = triton_jit::TritonJITFunction::get_instance(
         (flag_gems::utils::get_flag_gems_src_path() / "ops" / "flash_kernel.py").string(),
         "flash_varlen_fwd_kernel");
-    c10::cuda::CUDAStream stream = c10::cuda::getCurrentCUDAStream();
-    CUstream raw_stream = stream.stream();
+    auto raw_stream = flag_gems::stream::getCurrentStream();
 
     f(raw_stream,
       grid_x,

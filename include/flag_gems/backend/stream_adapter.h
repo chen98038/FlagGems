@@ -23,7 +23,7 @@ inline DefaultStreamType getCurrentStream(c10::DeviceIndex device_index = -1) {
     auto npu_stream = c10_npu::getCurrentNPUStream(device_index);
     return static_cast<aclrtStream>(npu_stream.stream());
 #elif defined(BACKEND_MUSA)
-    auto musa_stream = c10_musa::getCurrentMUSAStream(device_index);
+    auto musa_stream = c10::musa::getCurrentMUSAStream(device_index);
     return static_cast<musaStream_t>(musa_stream.stream());
 #else  // CUDA, IX
     auto cuda_stream = c10::cuda::getCurrentCUDAStream(device_index);

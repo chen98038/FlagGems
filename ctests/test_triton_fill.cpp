@@ -1,4 +1,3 @@
-#include "c10/cuda/CUDAFunctions.h"
 #include "flag_gems/operators.h"
 #include "gtest/gtest.h"
 #include "torch/torch.h"

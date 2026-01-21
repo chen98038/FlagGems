@@ -1,6 +1,20 @@
 import logging
 import warnings
 
+# Load libittnotify.so via ctypes before importing torch.
+# This avoids using LD_PRELOAD which causes triton to segfault,
+# while still providing the iJIT_NotifyEvent symbol that torch needs.
+import ctypes
+import os
+
+_conda_prefix = os.environ.get("CONDA_PREFIX", "")
+_libittnotify_path = os.path.join(_conda_prefix, "lib", "libittnotify.so")
+if os.path.exists(_libittnotify_path):
+    try:
+        ctypes.CDLL(_libittnotify_path, mode=ctypes.RTLD_GLOBAL)
+    except OSError:
+        pass  # Ignore if loading fails
+
 import torch
 from packaging import version
 

@@ -3,7 +3,7 @@
 
 #include <iostream>
 #include <optional>
-#include "c10/cuda/CUDAStream.h"
+#include "flag_gems/backend/stream_adapter.h"
 #include "triton_jit/triton_jit_function.h"
 
 namespace flag_gems {
@@ -129,8 +129,7 @@ void rotary_embedding_inplace(
 
   // getCurrentCUDAStream ensures that the stream is initialized, a default stream for each device
   c10::DeviceGuard guard(q.device());
-  c10::cuda::CUDAStream stream = c10::cuda::getCurrentCUDAStream();
-  CUstream raw_stream = static_cast<CUstream>(stream.stream());
+  auto raw_stream = stream::getCurrentStream();
 
   /* signature info
 def apply_rotary_pos_emb_inplace_kernel(
@@ -232,8 +231,7 @@ std::tuple<at::Tensor, at::Tensor> rotary_embedding(const at::Tensor& q,
       "apply_rotary_pos_emb_kernel");
   // getCurrentCUDAStream ensures that the stream is initialized, a default stream for each device
   c10::DeviceGuard guard(q.device());
-  c10::cuda::CUDAStream stream = c10::cuda::getCurrentCUDAStream();
-  CUstream raw_stream = static_cast<CUstream>(stream.stream());
+  auto raw_stream = stream::getCurrentStream();
 
   f(raw_stream,
     n_tokens,
