@@ -1,5 +1,6 @@
 #include "flag_gems/operators.h"
 #include "flag_gems/utils.h"
+#include "flag_gems/backend/device_types.h"
 #include "flag_gems/backend/stream_adapter.h"
 
 #include <c10/util/TypeTraits.h>
@@ -12,7 +13,8 @@ at::Tensor full_like_cpp_scalar(const at::Tensor& x,
                                 double fill_value,
                                 c10::optional<c10::ScalarType> dtype_opt = c10::nullopt,
                                 c10::optional<c10::Device> device_opt = c10::nullopt) {
-  TORCH_CHECK(x.is_cuda(), "This example only supports CUDA tensors.");
+  TORCH_CHECK(isBackendDevice(x),
+              "This function only supports ", getBackendDeviceName(), " tensors.");
 
   c10::ScalarType dtype = dtype_opt.value_or(x.scalar_type());
   c10::Device device = device_opt.value_or(x.device());
@@ -87,7 +89,8 @@ at::Tensor true_div(const at::Tensor& a, const at::Tensor& b) {
 }
 
 at::Tensor true_div_(at::Tensor& a_, const at::Tensor& b_) {
-  TORCH_CHECK(a_.device().is_cuda(), "true_div_: only CUDA tensors supported");
+  TORCH_CHECK(a_.device().type() == getBackendDeviceType(),
+              "true_div_: only ", getBackendDeviceName(), " tensors supported");
   TORCH_CHECK(a_.is_contiguous(), "true_div_: input a_ must be contiguous for in-place op");
 
   //  Tensor // Scalar
@@ -164,7 +167,8 @@ at::Tensor trunc_div(const at::Tensor& a, const at::Tensor& b) {
 }
 
 at::Tensor trunc_div_(at::Tensor& a_, const at::Tensor& b_) {
-  TORCH_CHECK(a_.device().is_cuda(), "trunc_div_: only CUDA tensors supported");
+  TORCH_CHECK(a_.device().type() == getBackendDeviceType(),
+              "trunc_div_: only ", getBackendDeviceName(), " tensors supported");
   TORCH_CHECK(a_.is_contiguous(), "trunc_div_: input a_ must be contiguous for in-place op");
 
   //  Tensor // Scalar
@@ -203,7 +207,8 @@ at::Tensor launch_floor_div_kernel(const at::Tensor& a_, const at::Tensor& b_, b
   at::Tensor b = res[1].contiguous();
 
   TORCH_CHECK(a.sizes() == b.sizes(), "Broadcasting failed.");
-  TORCH_CHECK(a.device().is_cuda(), "Only CUDA supported for floor_div");
+  TORCH_CHECK(a.device().type() == getBackendDeviceType(),
+            "Only ", getBackendDeviceName(), " supported for floor_div");
 
   at::ScalarType out_dtype = at::promote_types(a.scalar_type(), b.scalar_type());
   at::Tensor out = at::empty_like(a, at::TensorOptions().dtype(out_dtype).device(a.device()));
@@ -262,7 +267,8 @@ at::Tensor launch_floor_div_kernel_(at::Tensor& a_, const at::Tensor& b_, bool u
   at::Tensor b = res[1].contiguous();
 
   TORCH_CHECK(a.sizes() == b.sizes(), "Broadcasting failed.");
-  TORCH_CHECK(a.device().is_cuda(), "Only CUDA supported for floor_div");
+  TORCH_CHECK(a.device().type() == getBackendDeviceType(),
+            "Only ", getBackendDeviceName(), " supported for floor_div");
 
   at::ScalarType out_dtype = at::promote_types(a.scalar_type(), b.scalar_type());
 
@@ -448,7 +454,8 @@ at::Tensor remainder(const at::Tensor& a_, const at::Tensor& b_) {
 }
 
 at::Tensor remainder_(at::Tensor& a_, const at::Tensor& b_) {
-  TORCH_CHECK(a_.device().is_cuda(), "remainder_: only CUDA supported");
+  TORCH_CHECK(a_.device().type() == getBackendDeviceType(),
+              "remainder_: only ", getBackendDeviceName(), " supported");
 
   // Tensor % Tensor
   if (a_.dim() > 0 && b_.dim() > 0) {

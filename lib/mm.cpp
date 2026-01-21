@@ -2,9 +2,7 @@
 #include "flag_gems/operators.h"
 #include "flag_gems/utils.h"
 
-#if !defined(BACKEND_MUSA)
-#include <ATen/cuda/CUDAContext.h>
-#endif
+// Backend-specific context is now included via backend_config.h
 #include <iostream>
 #include <tuple>
 #include "flag_gems/backend/stream_adapter.h"

@@ -1,9 +1,6 @@
 #include <ATen/ATen.h>
-#if defined(BACKEND_MUSA)
-#include <musa_runtime_api.h>
-#else
-#include <cuda_runtime_api.h>
-#endif
+// Use unified runtime API abstraction
+#include "flag_gems/backend/runtime_api.h"
 #include <cmath>
 #include <limits>
 #include <tuple>

@@ -8,8 +8,16 @@ SCALE_BLOCK_K, SCALE_BLOCK_N = 128, 128
 
 
 def get_sm_version_num():
-    major, minor = torch.cuda.get_device_capability()
-    return major * 10 + minor
+    # Try CUDA first, then fallback for other backends (MUSA, etc.)
+    try:
+        if torch.cuda.is_available():
+            major, minor = torch.cuda.get_device_capability()
+            return major * 10 + minor
+    except (AssertionError, RuntimeError):
+        pass
+    # For non-CUDA backends (MUSA, NPU), return a reasonable default
+    # SM 90 (Hopper) provides good compatibility
+    return 90
 
 
 SM_VERSION_NUM = get_sm_version_num()

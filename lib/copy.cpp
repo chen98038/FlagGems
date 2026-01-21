@@ -1,5 +1,6 @@
 #include <c10/core/DispatchKeySet.h>
 #include <vector>
+#include "flag_gems/backend/device_types.h"
 #include "flag_gems/backend/stream_adapter.h"
 #include "flag_gems/utils.h"
 #include "torch/torch.h"
@@ -37,7 +38,8 @@ std::vector<int64_t> broadcasted_stride(const std::vector<int64_t>& shape,
 }
 
 static bool _can_use_triton_copy(const at::Tensor& dst, const at::Tensor& src, bool non_blocking) {
-  if (!dst.is_cuda() || !src.is_cuda()) return false;
+  // Use backend-agnostic device check instead of is_cuda()
+  if (!isBackendDevice(dst) || !isBackendDevice(src)) return false;
   if (dst.device() != src.device()) return false;
   if (non_blocking) return false;
   return true;

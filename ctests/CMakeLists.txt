@@ -1,116 +1,74 @@
-# Set up MUSA extra libraries for linking
+# ==============================================================================
+# Backend-specific test configuration
+# ==============================================================================
 if(BACKEND STREQUAL "MUSA")
     # MUSA needs: libmusa_python.so, libittnotify.so, and libtorch_python.so
     # libmusa_python.so depends on pybind11 symbols from libtorch_python.so
     # Use --allow-shlib-undefined to allow unresolved symbols from Python bindings
-    set(MUSA_LINK_LIBS ${MUSA_EXTRA_LIBRARIES} Torch::Torch_Python)
+    set(BACKEND_EXTRA_LIBS ${MUSA_EXTRA_LIBRARIES} Torch::Torch_Python)
     link_libraries("-Wl,--allow-shlib-undefined")
 else()
-    set(MUSA_LINK_LIBS "")
+    set(BACKEND_EXTRA_LIBS "")
 endif()
 
-add_executable(test_triton_pointwise test_triton_pointwise.cpp)
-target_link_libraries(test_triton_pointwise
-  PRIVATE Torch::Torch operators GTest::gtest GTest::gtest_main ${MUSA_LINK_LIBS})
-add_test(NAME test_triton_pointwise COMMAND test_triton_pointwise)
+# ==============================================================================
+# Helper function to add a triton test with common configuration
+# Usage: add_triton_test(NAME source.cpp [EXTRA_LIBS lib1 lib2 ...])
+# ==============================================================================
+function(add_triton_test)
+    cmake_parse_arguments(ARG "" "NAME" "EXTRA_LIBS" ${ARGN})
 
-add_executable(test_triton_reduction test_triton_reduction.cpp)
-target_link_libraries(test_triton_reduction
-  PRIVATE Torch::Torch operators GTest::gtest GTest::gtest_main ${MUSA_LINK_LIBS})
-add_test(NAME test_triton_reduction COMMAND test_triton_reduction)
+    # Derive source file from test name if not specified
+    set(SOURCE_FILE "${ARG_NAME}.cpp")
 
-add_executable(test_triton_blas test_triton_blas.cpp)
-target_link_libraries(test_triton_blas PRIVATE Torch::Torch operators gtest gtest_main ${MUSA_LINK_LIBS})
-add_test(NAME test_triton_blas COMMAND test_triton_blas)
+    add_executable(${ARG_NAME} ${SOURCE_FILE})
+    target_link_libraries(${ARG_NAME}
+        PRIVATE
+            Torch::Torch
+            operators
+            GTest::gtest
+            GTest::gtest_main
+            ${BACKEND_EXTRA_LIBS}
+            ${ARG_EXTRA_LIBS}
+    )
+    add_test(NAME ${ARG_NAME} COMMAND ${ARG_NAME})
+endfunction()
 
-add_executable(test_triton_norm test_triton_norm.cpp)
-target_link_libraries(test_triton_norm
-  PRIVATE Torch::Torch operators GTest::gtest GTest::gtest_main ${MUSA_LINK_LIBS})
-add_test(NAME test_triton_norm COMMAND test_triton_norm)
+# ==============================================================================
+# Test definitions using the helper function
+# ==============================================================================
 
-add_executable(test_triton_rope test_triton_rope.cpp)
-target_link_libraries(test_triton_rope
-  PRIVATE Torch::Torch operators GTest::gtest GTest::gtest_main ${MUSA_LINK_LIBS})
-add_test(NAME test_triton_rope COMMAND test_triton_rope)
+# Basic operation tests
+add_triton_test(NAME test_triton_pointwise)
+add_triton_test(NAME test_triton_reduction)
+add_triton_test(NAME test_triton_blas)
+add_triton_test(NAME test_triton_norm)
+add_triton_test(NAME test_triton_rope)
+add_triton_test(NAME test_triton_topk)
+add_triton_test(NAME test_triton_contiguous)
+add_triton_test(NAME test_triton_cat)
+add_triton_test(NAME test_triton_bmm)
+add_triton_test(NAME test_triton_embedding)
+add_triton_test(NAME test_triton_argmax)
+add_triton_test(NAME test_triton_div)
+add_triton_test(NAME test_triton_sort)
+add_triton_test(NAME test_triton_exponential_)
+add_triton_test(NAME test_triton_fill)
+add_triton_test(NAME test_triton_copy)
 
-
-add_executable(test_triton_topk test_triton_topk.cpp)
-target_link_libraries(test_triton_topk
-  PRIVATE Torch::Torch operators GTest::gtest GTest::gtest_main ${MUSA_LINK_LIBS})
-add_test(NAME test_triton_topk COMMAND test_triton_topk)
-
-add_executable(test_triton_contiguous test_triton_contiguous.cpp)
-target_link_libraries(test_triton_contiguous
-  PRIVATE Torch::Torch operators GTest::gtest GTest::gtest_main ${MUSA_LINK_LIBS})
-add_test(NAME test_triton_contiguous COMMAND test_triton_contiguous)
-
-add_executable(test_triton_cat test_triton_cat.cpp)
-target_link_libraries(test_triton_cat
-  PRIVATE Torch::Torch operators GTest::gtest GTest::gtest_main ${MUSA_LINK_LIBS})
-add_test(NAME test_triton_cat COMMAND test_triton_cat)
-
+# Tests with special source files
 add_executable(test_triton_zeros_constructor test_triton_tensor_constructor.cpp)
 target_link_libraries(test_triton_zeros_constructor
-  PRIVATE Torch::Torch operators GTest::gtest GTest::gtest_main ${MUSA_LINK_LIBS})
+    PRIVATE Torch::Torch operators GTest::gtest GTest::gtest_main ${BACKEND_EXTRA_LIBS})
 add_test(NAME test_triton_zeros_constructor COMMAND test_triton_zeros_constructor)
 
-add_executable(test_triton_bmm test_triton_bmm.cpp)
-target_link_libraries(test_triton_bmm
-  PRIVATE Torch::Torch operators GTest::gtest GTest::gtest_main ${MUSA_LINK_LIBS})
-add_test(NAME test_triton_bmm COMMAND test_triton_bmm)
+# Tests with extra dependencies
+add_triton_test(NAME test_triton_softmax EXTRA_LIBS ${Python_LIBRARIES} pybind11::embed)
 
-add_executable(test_triton_embedding test_triton_embedding.cpp)
-target_link_libraries(test_triton_embedding
-  PRIVATE Torch::Torch operators GTest::gtest GTest::gtest_main ${MUSA_LINK_LIBS})
-add_test(NAME test_triton_embedding COMMAND test_triton_embedding)
+# Attention and KV cache tests
+add_triton_test(NAME test_triton_reshape_and_cache_flash)
+add_triton_test(NAME test_triton_flash_attn_varlen)
 
-add_executable(test_triton_argmax test_triton_argmax.cpp)
-target_link_libraries(test_triton_argmax
-  PRIVATE Torch::Torch operators GTest::gtest GTest::gtest_main ${MUSA_LINK_LIBS})
-add_test(NAME test_triton_argmax COMMAND test_triton_argmax)
-
-add_executable(test_triton_div test_triton_div.cpp)
-target_link_libraries(test_triton_div PRIVATE Torch::Torch operators gtest gtest_main ${MUSA_LINK_LIBS})
-add_test(NAME test_triton_div COMMAND test_triton_div)
-add_executable(test_triton_sort test_triton_sort.cpp)
-target_link_libraries(test_triton_sort
-  PRIVATE Torch::Torch operators GTest::gtest GTest::gtest_main ${MUSA_LINK_LIBS})
-add_test(NAME test_triton_sort COMMAND test_triton_sort)
-
-add_executable(test_triton_exponential_ test_triton_exponential_.cpp)
-target_link_libraries(test_triton_exponential_
-  PRIVATE Torch::Torch operators GTest::gtest GTest::gtest_main ${MUSA_LINK_LIBS})
-add_test(NAME test_triton_exponential_ COMMAND test_triton_exponential_)
-add_executable(test_triton_fill  test_triton_fill.cpp)
-target_link_libraries(test_triton_fill
-  PRIVATE Torch::Torch operators GTest::gtest GTest::gtest_main ${MUSA_LINK_LIBS})
-add_test(NAME test_triton_fill COMMAND test_triton_fill)
-
-add_executable(test_triton_softmax test_triton_softmax.cpp)
-target_link_libraries(test_triton_softmax
-  PRIVATE Torch::Torch operators GTest::gtest GTest::gtest_main ${Python_LIBRARIES} pybind11::embed ${MUSA_LINK_LIBS})
-add_test(NAME test_triton_softmax COMMAND test_triton_softmax)
-
-add_executable(test_triton_reshape_and_cache_flash test_triton_reshape_and_cache_flash.cpp)
-target_link_libraries(test_triton_reshape_and_cache_flash
-  PRIVATE Torch::Torch operators GTest::gtest GTest::gtest_main ${MUSA_LINK_LIBS})
-add_test(NAME test_triton_reshape_and_cache_flash COMMAND test_triton_reshape_and_cache_flash)
-
-add_executable(test_triton_flash_attn_varlen test_triton_flash_attn_varlen.cpp)
-target_link_libraries(test_triton_flash_attn_varlen
-  PRIVATE Torch::Torch operators GTest::gtest GTest::gtest_main ${MUSA_LINK_LIBS})
-add_test(NAME test_triton_flash_attn_varlen COMMAND test_triton_flash_attn_varlen)
-add_executable(test_triton_rwkv_ka_fusion test_triton_rwkv_ka_fusion.cpp)
-target_link_libraries(test_triton_rwkv_ka_fusion
-  PRIVATE Torch::Torch operators GTest::gtest GTest::gtest_main ${MUSA_LINK_LIBS})
-add_test(NAME test_triton_rwkv_ka_fusion COMMAND test_triton_rwkv_ka_fusion)
-
-add_executable(test_triton_rwkv_mm_sparsity test_triton_rwkv_mm_sparsity.cpp)
-target_link_libraries(test_triton_rwkv_mm_sparsity
-  PRIVATE Torch::Torch operators GTest::gtest GTest::gtest_main ${MUSA_LINK_LIBS})
-add_test(NAME test_triton_rwkv_mm_sparsity COMMAND test_triton_rwkv_mm_sparsity)
-
-add_executable(test_triton_copy test_triton_copy.cpp)
-target_link_libraries(test_triton_copy
-  PRIVATE Torch::Torch operators GTest::gtest GTest::gtest_main ${MUSA_LINK_LIBS})
-add_test(NAME test_triton_copy COMMAND test_triton_copy)
+# RWKV tests
+add_triton_test(NAME test_triton_rwkv_ka_fusion)
+add_triton_test(NAME test_triton_rwkv_mm_sparsity)

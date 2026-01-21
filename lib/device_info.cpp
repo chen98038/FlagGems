@@ -1,21 +1,5 @@
 #include "flag_gems/device_info.h"
-
-#if defined(BACKEND_MUSA)
-#include <musa_runtime_api.h>
-#define gpuDeviceProp musaDeviceProp
-#define gpuGetDeviceProperties musaGetDeviceProperties
-#define gpuGetDevice musaGetDevice
-#define gpuSuccess musaSuccess
-#define GPURT_VERSION 0  // MUSA doesn't have version macro like CUDART_VERSION
-#else
-#include <ATen/cuda/CUDAContext.h>
-#include <cuda_runtime_api.h>
-#define gpuDeviceProp cudaDeviceProp
-#define gpuGetDeviceProperties cudaGetDeviceProperties
-#define gpuGetDevice cudaGetDevice
-#define gpuSuccess cudaSuccess
-#define GPURT_VERSION CUDART_VERSION
-#endif
+#include "flag_gems/backend/runtime_api.h"
 
 #include <mutex>
 #include <unordered_map>
@@ -25,9 +9,9 @@ namespace {
   DeviceInfo query_device(int device_id) {
     DeviceInfo info {};
     info.device_id = device_id;
-    gpuDeviceProp props {};
-    if (gpuGetDeviceProperties(&props, device_id) == gpuSuccess) {
-#if GPURT_VERSION >= 11020
+    GPU_DEVICE_PROP props {};
+    if (gpuGetDeviceProperties(&props, device_id) == GPU_SUCCESS) {
+#if GPU_RUNTIME_VERSION >= 11020
       info.l2_cache_size = props.l2CacheSize;
 #else
       info.l2_cache_size = 40ull * 1024 * 1024;
@@ -72,7 +56,7 @@ const DeviceInfo &get_device_info(int device_id) {
 
 const DeviceInfo &get_current_device_info() {
   int device_id = 0;
-  if (gpuGetDevice(&device_id) != gpuSuccess) {
+  if (gpuGetDevice(&device_id) != GPU_SUCCESS) {
     device_id = 0;
   }
   return get_device_info(device_id);

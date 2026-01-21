@@ -1,15 +1,20 @@
 #include <ATen/ATen.h>
 #include <ATen/Generator.h>
 #include <ATen/core/Generator.h>
-#include <ATen/cuda/CUDAGeneratorImpl.h>
 #include <c10/util/Exception.h>
 #include <c10/util/Optional.h>
 #include <torch/torch.h>
 #include <iostream>
+#include "flag_gems/backend/device_types.h"
 #include "flag_gems/backend/stream_adapter.h"
 #include "flag_gems/operators.h"
 #include "flag_gems/utils.h"
 #include "triton_jit/triton_jit_function.h"
+
+// Backend-specific Generator header
+#if !defined(BACKEND_MUSA) && !defined(BACKEND_NPU)
+    #include <ATen/cuda/CUDAGeneratorImpl.h>
+#endif
 namespace flag_gems {
 using namespace triton_jit;
 enum class FloatType { Float32, Float64, Float16, BFloat16 };
@@ -50,16 +55,10 @@ FloatType dtype_to_floattype(torch::Dtype dtype) {
 std::string get_vendor_name_simulated() {
   return "nvidia";
 }
+
+// Use unified device type abstraction from device_types.h
 at::Device get_current_torch_device() {
-#if defined(BACKEND_MUSA)
-  return at::Device(c10::DeviceType::PrivateUse1, c10::musa::current_device());
-#else
-  if (torch::cuda::is_available()) {
-    return at::Device(at::kCUDA, at::cuda::current_device());
-  } else {
-    return at::Device(at::kCPU);
-  }
-#endif
+  return getCurrentBackendDevice();
 }
 std::pair<uint64_t, uint64_t> philox_backend_seed_offset(
     int64_t increment, c10::optional<at::Generator> generator_opt = c10::nullopt) {
@@ -104,7 +103,9 @@ at::Tensor &exponential_(at::Tensor &self, double lambd, c10::optional<at::Gener
                 dtype == torch::kFloat64,
             "Unsupported dtype");
   TORCH_CHECK(lambd > 0.0, "exponential_ requires lambd > 0.0, but got ", lambd);
-  TORCH_CHECK(self.is_cuda(), "exponential_ currently only supports CUDA tensors");
+  // Use backend-agnostic device check instead of is_cuda()
+  TORCH_CHECK(isBackendDevice(self),
+              "exponential_ currently only supports ", getBackendDeviceName(), " tensors");
   bool is_double = (dtype == torch::kFloat64);
 
   const int UNROLL = is_double ? 2 : 4;
