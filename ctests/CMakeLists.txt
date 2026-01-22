@@ -7,8 +7,23 @@ if(BACKEND STREQUAL "MUSA")
     # Use --allow-shlib-undefined to allow unresolved symbols from Python bindings
     set(BACKEND_EXTRA_LIBS ${MUSA_EXTRA_LIBRARIES} Torch::Torch_Python)
     link_libraries("-Wl,--allow-shlib-undefined")
+
+    # Get torch_musa include paths for MUSA backend
+    execute_process(
+        COMMAND ${Python_EXECUTABLE} -c "import site; print(site.getsitepackages()[0])"
+        OUTPUT_VARIABLE PYTHON_SITE_PACKAGES
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+    )
+    set(TORCH_MUSA_PATH "${PYTHON_SITE_PACKAGES}/torch_musa")
+    get_filename_component(TORCH_MUSA_PARENT "${TORCH_MUSA_PATH}" DIRECTORY)
+    set(MUSA_INCLUDE_DIRS
+        "${TORCH_MUSA_PARENT}"
+        "${TORCH_MUSA_PATH}/include"
+        "${Python_INCLUDE_DIRS}"
+    )
 else()
     set(BACKEND_EXTRA_LIBS "")
+    set(MUSA_INCLUDE_DIRS "")
 endif()
 
 # ==============================================================================
@@ -31,6 +46,10 @@ function(add_triton_test)
             ${BACKEND_EXTRA_LIBS}
             ${ARG_EXTRA_LIBS}
     )
+    # Add backend-specific include directories
+    if(MUSA_INCLUDE_DIRS)
+        target_include_directories(${ARG_NAME} PRIVATE ${MUSA_INCLUDE_DIRS})
+    endif()
     add_test(NAME ${ARG_NAME} COMMAND ${ARG_NAME})
 endfunction()
 
@@ -39,7 +58,12 @@ endfunction()
 # ==============================================================================
 
 # Basic operation tests
-add_triton_test(NAME test_triton_pointwise)
+if(BACKEND STREQUAL "MUSA")
+    # MUSA tests need Python interpreter embedded
+    add_triton_test(NAME test_triton_pointwise EXTRA_LIBS ${Python_LIBRARIES} pybind11::embed)
+else()
+    add_triton_test(NAME test_triton_pointwise)
+endif()
 add_triton_test(NAME test_triton_reduction)
 add_triton_test(NAME test_triton_blas)
 add_triton_test(NAME test_triton_norm)
@@ -60,6 +84,9 @@ add_triton_test(NAME test_triton_copy)
 add_executable(test_triton_zeros_constructor test_triton_tensor_constructor.cpp)
 target_link_libraries(test_triton_zeros_constructor
     PRIVATE Torch::Torch operators GTest::gtest GTest::gtest_main ${BACKEND_EXTRA_LIBS})
+if(MUSA_INCLUDE_DIRS)
+    target_include_directories(test_triton_zeros_constructor PRIVATE ${MUSA_INCLUDE_DIRS})
+endif()
 add_test(NAME test_triton_zeros_constructor COMMAND test_triton_zeros_constructor)
 
 # Tests with extra dependencies

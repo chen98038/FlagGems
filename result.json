@@ -1,16 +1,513 @@
 {
-    "tests/test_blas_ops.py::test_accuracy_addmm[True-dtype0-0.001-1-1-32]": {
+    "tests/test_torch_ops_flag_gems.py::TestBasicOps::test_add_tensor[dtype0-shape0]": {
         "params": {
-            "b_column_major": true,
-            "dtype": "torch.float16",
-            "scalar": 0.001,
-            "M": 1,
-            "N": 1,
-            "K": 32
+            "dtype": "torch.float32",
+            "shape": [
+                128,
+                256
+            ]
         },
-        "result": "failed",
+        "result": "passed",
         "opname": [
-            "addmm"
+            "torch_ops_flag_gems"
+        ],
+        "skipped_reason": null
+    },
+    "tests/test_torch_ops_flag_gems.py::TestBLASOps::test_mm[dtype0-64-128-256]": {
+        "params": {
+            "dtype": "torch.float32",
+            "M": 64,
+            "N": 128,
+            "K": 256
+        },
+        "result": "passed",
+        "opname": [
+            "torch_ops_flag_gems"
+        ],
+        "skipped_reason": null
+    },
+    "tests/test_torch_ops_flag_gems.py::TestBLASOps::test_bmm[dtype0-64-128-256]": {
+        "params": {
+            "dtype": "torch.float32",
+            "M": 64,
+            "N": 128,
+            "K": 256
+        },
+        "result": "passed",
+        "opname": [
+            "torch_ops_flag_gems"
+        ],
+        "skipped_reason": null
+    },
+    "tests/test_torch_ops_flag_gems.py::TestBLASOps::test_addmm[dtype0-0.001-64-128-256]": {
+        "params": {
+            "dtype": "torch.float32",
+            "scalar": 0.001,
+            "M": 64,
+            "N": 128,
+            "K": 256
+        },
+        "result": "passed",
+        "opname": [
+            "torch_ops_flag_gems"
+        ],
+        "skipped_reason": null
+    },
+    "tests/test_torch_ops_flag_gems.py::TestBLASOps::test_addmm[dtype0--0.999-64-128-256]": {
+        "params": {
+            "dtype": "torch.float32",
+            "scalar": -0.999,
+            "M": 64,
+            "N": 128,
+            "K": 256
+        },
+        "result": "passed",
+        "opname": [
+            "torch_ops_flag_gems"
+        ],
+        "skipped_reason": null
+    },
+    "tests/test_torch_ops_flag_gems.py::TestReductionOps::test_sum[dtype0-shape0]": {
+        "params": {
+            "dtype": "torch.float32",
+            "shape": [
+                2,
+                32
+            ]
+        },
+        "result": "passed",
+        "opname": [
+            "torch_ops_flag_gems"
+        ],
+        "skipped_reason": null
+    },
+    "tests/test_torch_ops_flag_gems.py::TestReductionOps::test_sum_dim[dtype0-False-1-shape0]": {
+        "params": {
+            "dtype": "torch.float32",
+            "keepdim": false,
+            "dim": 1,
+            "shape": [
+                2,
+                32
+            ]
+        },
+        "result": "passed",
+        "opname": [
+            "torch_ops_flag_gems"
+        ],
+        "skipped_reason": null
+    },
+    "tests/test_torch_ops_flag_gems.py::TestReductionOps::test_max[dtype0-shape0]": {
+        "params": {
+            "dtype": "torch.float32",
+            "shape": [
+                2,
+                32
+            ]
+        },
+        "result": "passed",
+        "opname": [
+            "torch_ops_flag_gems"
+        ],
+        "skipped_reason": null
+    },
+    "tests/test_torch_ops_flag_gems.py::TestReductionOps::test_max_dim[dtype0-False-1-shape0]": {
+        "params": {
+            "dtype": "torch.float32",
+            "keepdim": false,
+            "dim": 1,
+            "shape": [
+                2,
+                32
+            ]
+        },
+        "result": "passed",
+        "opname": [
+            "torch_ops_flag_gems"
+        ],
+        "skipped_reason": null
+    },
+    "tests/test_torch_ops_flag_gems.py::TestReductionOps::test_argmax[dtype0-False-1-shape0]": {
+        "params": {
+            "dtype": "torch.float32",
+            "keepdim": false,
+            "dim": 1,
+            "shape": [
+                1,
+                32
+            ]
+        },
+        "result": "passed",
+        "opname": [
+            "torch_ops_flag_gems"
+        ],
+        "skipped_reason": null
+    },
+    "tests/test_torch_ops_flag_gems.py::TestReductionOps::test_argmax[dtype0-False-None-shape0]": {
+        "params": {
+            "dtype": "torch.float32",
+            "keepdim": false,
+            "dim": null,
+            "shape": [
+                1,
+                32
+            ]
+        },
+        "result": "passed",
+        "opname": [
+            "torch_ops_flag_gems"
+        ],
+        "skipped_reason": null
+    },
+    "tests/test_torch_ops_flag_gems.py::TestDivisionOps::test_div_tensor[dtype0-shape0]": {
+        "params": {
+            "dtype": "torch.float32",
+            "shape": [
+                128,
+                256
+            ]
+        },
+        "result": "passed",
+        "opname": [
+            "torch_ops_flag_gems"
+        ],
+        "skipped_reason": null
+    },
+    "tests/test_torch_ops_flag_gems.py::TestDivisionOps::test_true_divide_tensor[dtype0-shape0]": {
+        "params": {
+            "dtype": "torch.float32",
+            "shape": [
+                128,
+                256
+            ]
+        },
+        "result": "passed",
+        "opname": [
+            "torch_ops_flag_gems"
+        ],
+        "skipped_reason": null
+    },
+    "tests/test_torch_ops_flag_gems.py::TestFillOps::test_fill_scalar[dtype0-0.0-shape0]": {
+        "params": {
+            "dtype": "torch.float16",
+            "value": 0.0,
+            "shape": [
+                128,
+                256
+            ]
+        },
+        "result": "passed",
+        "opname": [
+            "torch_ops_flag_gems"
+        ],
+        "skipped_reason": null
+    },
+    "tests/test_torch_ops_flag_gems.py::TestFillOps::test_fill_scalar[dtype0-1.0-shape0]": {
+        "params": {
+            "dtype": "torch.float16",
+            "value": 1.0,
+            "shape": [
+                128,
+                256
+            ]
+        },
+        "result": "passed",
+        "opname": [
+            "torch_ops_flag_gems"
+        ],
+        "skipped_reason": null
+    },
+    "tests/test_torch_ops_flag_gems.py::TestFillOps::test_fill_scalar[dtype0--3.14-shape0]": {
+        "params": {
+            "dtype": "torch.float16",
+            "value": -3.14,
+            "shape": [
+                128,
+                256
+            ]
+        },
+        "result": "passed",
+        "opname": [
+            "torch_ops_flag_gems"
+        ],
+        "skipped_reason": null
+    },
+    "tests/test_torch_ops_flag_gems.py::TestFillOps::test_fill_scalar[dtype1-0.0-shape0]": {
+        "params": {
+            "dtype": "torch.float32",
+            "value": 0.0,
+            "shape": [
+                128,
+                256
+            ]
+        },
+        "result": "passed",
+        "opname": [
+            "torch_ops_flag_gems"
+        ],
+        "skipped_reason": null
+    },
+    "tests/test_torch_ops_flag_gems.py::TestFillOps::test_fill_scalar[dtype1-1.0-shape0]": {
+        "params": {
+            "dtype": "torch.float32",
+            "value": 1.0,
+            "shape": [
+                128,
+                256
+            ]
+        },
+        "result": "passed",
+        "opname": [
+            "torch_ops_flag_gems"
+        ],
+        "skipped_reason": null
+    },
+    "tests/test_torch_ops_flag_gems.py::TestFillOps::test_fill_scalar[dtype1--3.14-shape0]": {
+        "params": {
+            "dtype": "torch.float32",
+            "value": -3.14,
+            "shape": [
+                128,
+                256
+            ]
+        },
+        "result": "passed",
+        "opname": [
+            "torch_ops_flag_gems"
+        ],
+        "skipped_reason": null
+    },
+    "tests/test_torch_ops_flag_gems.py::TestSortOps::test_topk[dtype0-True-5-shape0]": {
+        "params": {
+            "dtype": "torch.float32",
+            "largest": true,
+            "k": 5,
+            "shape": [
+                32,
+                64
+            ]
+        },
+        "result": "passed",
+        "opname": [
+            "torch_ops_flag_gems"
+        ],
+        "skipped_reason": null
+    },
+    "tests/test_torch_ops_flag_gems.py::TestSortOps::test_topk[dtype0-False-5-shape0]": {
+        "params": {
+            "dtype": "torch.float32",
+            "largest": false,
+            "k": 5,
+            "shape": [
+                32,
+                64
+            ]
+        },
+        "result": "passed",
+        "opname": [
+            "torch_ops_flag_gems"
+        ],
+        "skipped_reason": null
+    },
+    "tests/test_torch_ops_flag_gems.py::TestSortOps::test_sort[dtype0-True--1-shape0]": {
+        "params": {
+            "dtype": "torch.float32",
+            "descending": true,
+            "dim": -1,
+            "shape": [
+                32,
+                64
+            ]
+        },
+        "result": "passed",
+        "opname": [
+            "torch_ops_flag_gems"
+        ],
+        "skipped_reason": null
+    },
+    "tests/test_torch_ops_flag_gems.py::TestSortOps::test_sort[dtype0-True-0-shape0]": {
+        "params": {
+            "dtype": "torch.float32",
+            "descending": true,
+            "dim": 0,
+            "shape": [
+                32,
+                64
+            ]
+        },
+        "result": "passed",
+        "opname": [
+            "torch_ops_flag_gems"
+        ],
+        "skipped_reason": null
+    },
+    "tests/test_torch_ops_flag_gems.py::TestSortOps::test_sort[dtype0-False--1-shape0]": {
+        "params": {
+            "dtype": "torch.float32",
+            "descending": false,
+            "dim": -1,
+            "shape": [
+                32,
+                64
+            ]
+        },
+        "result": "passed",
+        "opname": [
+            "torch_ops_flag_gems"
+        ],
+        "skipped_reason": null
+    },
+    "tests/test_torch_ops_flag_gems.py::TestSortOps::test_sort[dtype0-False-0-shape0]": {
+        "params": {
+            "dtype": "torch.float32",
+            "descending": false,
+            "dim": 0,
+            "shape": [
+                32,
+                64
+            ]
+        },
+        "result": "passed",
+        "opname": [
+            "torch_ops_flag_gems"
+        ],
+        "skipped_reason": null
+    },
+    "tests/test_torch_ops_flag_gems.py::TestNormalizationOps::test_rms_norm[dtype0-shape0]": {
+        "params": {
+            "dtype": "torch.float32",
+            "shape": [
+                128,
+                256
+            ]
+        },
+        "result": "passed",
+        "opname": [
+            "torch_ops_flag_gems"
+        ],
+        "skipped_reason": null
+    },
+    "tests/test_torch_ops_flag_gems.py::TestTensorOps::test_cat[dtype0-0-2]": {
+        "params": {
+            "dtype": "torch.float32",
+            "dim": 0,
+            "num_tensors": 2
+        },
+        "result": "passed",
+        "opname": [
+            "torch_ops_flag_gems"
+        ],
+        "skipped_reason": null
+    },
+    "tests/test_torch_ops_flag_gems.py::TestTensorOps::test_cat[dtype0-0-3]": {
+        "params": {
+            "dtype": "torch.float32",
+            "dim": 0,
+            "num_tensors": 3
+        },
+        "result": "passed",
+        "opname": [
+            "torch_ops_flag_gems"
+        ],
+        "skipped_reason": null
+    },
+    "tests/test_torch_ops_flag_gems.py::TestTensorOps::test_cat[dtype0-1-2]": {
+        "params": {
+            "dtype": "torch.float32",
+            "dim": 1,
+            "num_tensors": 2
+        },
+        "result": "passed",
+        "opname": [
+            "torch_ops_flag_gems"
+        ],
+        "skipped_reason": null
+    },
+    "tests/test_torch_ops_flag_gems.py::TestTensorOps::test_cat[dtype0-1-3]": {
+        "params": {
+            "dtype": "torch.float32",
+            "dim": 1,
+            "num_tensors": 3
+        },
+        "result": "passed",
+        "opname": [
+            "torch_ops_flag_gems"
+        ],
+        "skipped_reason": null
+    },
+    "tests/test_torch_ops_flag_gems.py::TestTensorOps::test_contiguous[dtype0-shape0]": {
+        "params": {
+            "dtype": "torch.float32",
+            "shape": [
+                128,
+                256
+            ]
+        },
+        "result": "passed",
+        "opname": [
+            "torch_ops_flag_gems"
+        ],
+        "skipped_reason": null
+    },
+    "tests/test_torch_ops_flag_gems.py::TestTensorOps::test_nonzero[dtype0-shape0]": {
+        "params": {
+            "dtype": "torch.float32",
+            "shape": [
+                32,
+                64
+            ]
+        },
+        "result": "passed",
+        "opname": [
+            "torch_ops_flag_gems"
+        ],
+        "skipped_reason": null
+    },
+    "tests/test_torch_ops_flag_gems.py::TestTensorOps::test_embedding[dtype0-64-100]": {
+        "params": {
+            "dtype": "torch.float32",
+            "embedding_dim": 64,
+            "num_embeddings": 100
+        },
+        "result": "passed",
+        "opname": [
+            "torch_ops_flag_gems"
+        ],
+        "skipped_reason": null
+    },
+    "tests/test_torch_ops_flag_gems.py::TestTensorOps::test_embedding[dtype0-64-1000]": {
+        "params": {
+            "dtype": "torch.float32",
+            "embedding_dim": 64,
+            "num_embeddings": 1000
+        },
+        "result": "passed",
+        "opname": [
+            "torch_ops_flag_gems"
+        ],
+        "skipped_reason": null
+    },
+    "tests/test_torch_ops_flag_gems.py::TestTensorOps::test_embedding[dtype0-128-100]": {
+        "params": {
+            "dtype": "torch.float32",
+            "embedding_dim": 128,
+            "num_embeddings": 100
+        },
+        "result": "passed",
+        "opname": [
+            "torch_ops_flag_gems"
+        ],
+        "skipped_reason": null
+    },
+    "tests/test_torch_ops_flag_gems.py::TestTensorOps::test_embedding[dtype0-128-1000]": {
+        "params": {
+            "dtype": "torch.float32",
+            "embedding_dim": 128,
+            "num_embeddings": 1000
+        },
+        "result": "passed",
+        "opname": [
+            "torch_ops_flag_gems"
         ],
         "skipped_reason": null
     }

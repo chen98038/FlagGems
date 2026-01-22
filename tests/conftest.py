@@ -4,9 +4,9 @@ import os
 from datetime import datetime
 
 import pytest
-import torch
 
-import flag_gems
+import flag_gems  # Import flag_gems before torch to load libittnotify.so via ctypes
+import torch
 
 device = flag_gems.device
 
