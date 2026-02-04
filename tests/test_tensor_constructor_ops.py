@@ -36,7 +36,7 @@ def test_accuracy_rand(shape, dtype):
 @pytest.mark.parametrize("shape", DISTRIBUTION_SHAPES)
 @pytest.mark.parametrize("dtype", FLOAT_DTYPES)
 def test_accuracy_randn(shape, dtype):
-    if flag_gems.vendor_name == "cambricon":
+    if flag_gems.vendor_name in ["cambricon", "iluvatar"]:
         torch.manual_seed(42)
     with flag_gems.use_gems():
         res_out = torch.randn(shape, dtype=dtype, device=device)
@@ -88,6 +88,18 @@ def test_accuracy_zeros(shape, dtype):
     gems_assert_equal(
         res_out, torch.zeros(shape, dtype=dtype, device="cpu" if TO_CPU else device)
     )
+
+
+@pytest.mark.zero_
+@pytest.mark.parametrize("shape", POINTWISE_SHAPES)
+@pytest.mark.parametrize("dtype", BOOL_TYPES + ALL_INT_DTYPES + ALL_FLOAT_DTYPES)
+def test_accuracy_zero_(shape, dtype):
+    out = torch.ones(shape, dtype=dtype, device=flag_gems.device)
+    ref_out = to_reference(out)
+    ref_out.zero_()
+    with flag_gems.use_gems():
+        out.zero_()
+    gems_assert_equal(out, ref_out)
 
 
 @pytest.mark.ones
