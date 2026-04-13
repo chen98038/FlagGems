@@ -216,9 +216,15 @@ while enabling the C++ extensions using the `CMAKE_ARGS` environment variable:
 `CMAKE_ARGS` 环境变量来启用 C++ 扩展特性：
 
 ```shell
-CMAKE_ARGS="-DFLAGGEMS_BUILD_C_EXTENSIONS=ON" \
+CMAKE_ARGS="-DFLAGGEMS_BUILD_C_EXTENSIONS=ON -DCMAKE_BUILD_TYPE=Release" \
 pip install --no-build-isolation -v -e .
 ```
+
+> [!TIP]
+> 建议显式指定 `-DCMAKE_BUILD_TYPE=Release`。
+> 若不指定构建类型，`libtriton_jit` 及 `FlagGems` 自身的 C++ 代码
+> 都不会针对所选目标平台启用编译器优化（`-O3 -DNDEBUG` 等），
+> 从而导致 C++ wrapper 的执行时间明显变长，拉低 C++ 封装算子的整体性能。
 
 <!--
 Note that the above command installs the
@@ -231,7 +237,7 @@ by cloning its GIT repository and installing it from source.
 **NVIDIA CUDA（启用 pointwise 动态 C++ 支持）**
 
 ```shell
-CMAKE_ARGS="-DFLAGGEMS_BUILD_C_EXTENSIONS=ON -DFLAGGEMS_BUILD_POINTWISE_DYNAMIC_CPP=ON" \
+CMAKE_ARGS="-DFLAGGEMS_BUILD_C_EXTENSIONS=ON -DFLAGGEMS_BUILD_POINTWISE_DYNAMIC_CPP=ON -DCMAKE_BUILD_TYPE=Release" \
 pip install --no-build-isolation -v -e .
 ```
 
@@ -239,8 +245,8 @@ pip install --no-build-isolation -v -e .
 
 ```shell
 export LIBRARY_PATH=<corex-install-dir>/lib64:$LIBRARY_PATH
-
-CMAKE_ARGS="-DFLAGGEMS_BACKEND=IX -DFLAGGEMS_BUILD_C_EXTENSIONS=ON -DFLAGGEMS_BUILD_CTESTS=ON -DCMAKE_BUILD_TYPE=Release" \
+#export LIBRARY_PATH=/usr/local/corex/lib64:$LIBRARY_PATH
+CMAKE_ARGS="-DFLAGGEMS_BACKEND=IX -DFLAGGEMS_BUILD_C_EXTENSIONS=ON -DCMAKE_BUILD_TYPE=Release" \
 pip install --no-build-isolation -v -e .
 ```
 
@@ -248,16 +254,15 @@ pip install --no-build-isolation -v -e .
 
 ```shell
 export MUSA_HOME=<musa-install-dir>
-
-LD_PRELOAD=$CONDA_PREFIX/lib/libittnotify.so \
+#export MUSA_HOME=/usr/local/musa-xxx
 pip install --no-build-isolation -v -e . \
-  --config-settings=cmake.args="-DFLAGGEMS_BACKEND=MUSA;-DFLAGGEMS_BUILD_C_EXTENSIONS=ON;-DFLAGGEMS_BUILD_CTESTS=ON"
+  --config-settings=cmake.args="-DFLAGGEMS_BACKEND=MUSA;-DFLAGGEMS_BUILD_C_EXTENSIONS=ON;-DCMAKE_BUILD_TYPE=Release"
 ```
 
 **华为昇腾 (NPU)**
 
 ```shell
-CMAKE_ARGS="-DFLAGGEMS_BACKEND=NPU -DFLAGGEMS_BUILD_C_EXTENSIONS=ON" \
+CMAKE_ARGS="-DFLAGGEMS_BACKEND=NPU -DFLAGGEMS_BUILD_C_EXTENSIONS=ON -DCMAKE_BUILD_TYPE=Release" \
 pip install --no-build-isolation -e .
 ```
 

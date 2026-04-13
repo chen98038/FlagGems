@@ -111,9 +111,17 @@ The following command installs the `flag_gems` package in an editable mode,
 while enabling the C++ extensions using the `CMAKE_ARGS` environment variable:
 
 ```shell
-CMAKE_ARGS="-DFLAGGEMS_BUILD_C_EXTENSIONS=ON" \
+CMAKE_ARGS="-DFLAGGEMS_BUILD_C_EXTENSIONS=ON -DCMAKE_BUILD_TYPE=Release" \
 pip install --no-build-isolation -v -e .
 ```
+
+> [!TIP]
+> It is recommended to explicitly set `-DCMAKE_BUILD_TYPE=Release`.
+> Without an explicit build type, neither `libtriton_jit` nor FlagGems's
+> own C++ code will be built with compiler optimizations targeted at the
+> selected platform (`-O3 -DNDEBUG` etc.), which makes the C++ wrapper
+> execution noticeably slower and drags down the overall performance of
+> the C++ wrapped operators.
 
 The above command builds for the default **CUDA** backend. To build for
 a different backend or to enable the pointwise dynamic C++ module,
@@ -123,7 +131,7 @@ supported platform:
 **NVIDIA CUDA (with pointwise dynamic C++ support)**
 
 ```shell
-CMAKE_ARGS="-DFLAGGEMS_BUILD_C_EXTENSIONS=ON -DFLAGGEMS_BUILD_POINTWISE_DYNAMIC_CPP=ON" \
+CMAKE_ARGS="-DFLAGGEMS_BUILD_C_EXTENSIONS=ON -DFLAGGEMS_BUILD_POINTWISE_DYNAMIC_CPP=ON -DCMAKE_BUILD_TYPE=Release" \
 pip install --no-build-isolation -v -e .
 ```
 
@@ -131,8 +139,8 @@ pip install --no-build-isolation -v -e .
 
 ```shell
 export LIBRARY_PATH=<corex-install-dir>/lib64:$LIBRARY_PATH
-
-CMAKE_ARGS="-DFLAGGEMS_BACKEND=IX -DFLAGGEMS_BUILD_C_EXTENSIONS=ON -DFLAGGEMS_BUILD_CTESTS=ON -DCMAKE_BUILD_TYPE=Release" \
+#export LIBRARY_PATH=/usr/local/corex/lib64:$LIBRARY_PATH
+CMAKE_ARGS="-DFLAGGEMS_BACKEND=IX -DFLAGGEMS_BUILD_C_EXTENSIONS=ON -DCMAKE_BUILD_TYPE=Release" \
 pip install --no-build-isolation -v -e .
 ```
 
@@ -140,16 +148,15 @@ pip install --no-build-isolation -v -e .
 
 ```shell
 export MUSA_HOME=<musa-install-dir>
-
-LD_PRELOAD=$CONDA_PREFIX/lib/libittnotify.so \
+#export MUSA_HOME=/usr/local/musa-xxx
 pip install --no-build-isolation -v -e . \
-  --config-settings=cmake.args="-DFLAGGEMS_BACKEND=MUSA;-DFLAGGEMS_BUILD_C_EXTENSIONS=ON;-DFLAGGEMS_BUILD_CTESTS=ON"
+  --config-settings=cmake.args="-DFLAGGEMS_BACKEND=MUSA;-DFLAGGEMS_BUILD_C_EXTENSIONS=ON;-DCMAKE_BUILD_TYPE=Release"
 ```
 
 **Huawei Ascend (NPU)**
 
 ```shell
-CMAKE_ARGS="-DFLAGGEMS_BACKEND=NPU -DFLAGGEMS_BUILD_C_EXTENSIONS=ON" \
+CMAKE_ARGS="-DFLAGGEMS_BACKEND=NPU -DFLAGGEMS_BUILD_C_EXTENSIONS=ON -DCMAKE_BUILD_TYPE=Release" \
 pip install --no-build-isolation -e .
 ```
 
