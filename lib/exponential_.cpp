@@ -9,6 +9,7 @@
 #include "flag_gems/operators.h"
 #include "flag_gems/utils.h"
 #include "triton_jit/triton_jit_function.h"
+#include "utils/autotune_helper.h"
 namespace flag_gems {
 using namespace triton_jit;
 enum class FloatType { Float32, Float64, Float16, BFloat16 };
@@ -126,35 +127,39 @@ at::Tensor &exponential_(at::Tensor &self, double lambd, c10::optional<at::Gener
   } else {
     x_ = at::empty(self.sizes(), at::TensorOptions().dtype(dtype).device(device));
   }
-  constexpr int64_t BLOCK = 128;
-  unsigned grid_x = (N + BLOCK * UNROLL - 1) / (BLOCK * UNROLL);
-  const TritonJITFunction *f = nullptr;
-  if (is_double) {
-    f = &TritonJITFunction::get_instance(
-        std::string(utils::get_flag_gems_src_path() / "ops" / "exponential_.py"),
-        "fused_exponential_kernel_f64");
-  } else {
-    f = &TritonJITFunction::get_instance(
-        std::string(utils::get_flag_gems_src_path() / "ops" / "exponential_.py"),
-        "fused_exponential_kernel_f32");
-  }
+  const double eps_val = get_epsilon(dtype_to_floattype(dtype));
+  const int64_t seed_i = static_cast<int64_t>(philox_seed);
+  const int64_t offset_i = static_cast<int64_t>(philox_offset);
+
+  const std::string py_path = std::string(utils::get_flag_gems_src_path() / "ops" / "exponential_.py");
+
+  // grid_fn captures N and UNROLL; reads tuned BLOCK from the config.
+  // It is only invoked during the benchmark (SQL miss).
+  auto grid_fn = [N, UNROLL](const triton_jit::Config &c) -> std::tuple<unsigned, unsigned, unsigned> {
+    int64_t block = get_int_kwarg(c, "BLOCK");
+    unsigned gx = (unsigned)((N + block * UNROLL - 1) / (block * UNROLL));
+    return {gx, 1u, 1u};
+  };
 
   c10::DeviceGuard guard(x_.device());
   backend::StreamType stream = backend::getCurrentStream();
   backend::RawStreamType raw_stream = backend::getRawStream(stream);
-  (*f)(raw_stream,
-       grid_x,
-       /* grid_y = */ 1,
-       /* grid_z = */ 1,
-       /* num_warps = */ 8,
-       /* num_stages = */ 1,
-       x_,
-       N,
-       lambd,
-       get_epsilon(dtype_to_floattype(dtype)),
-       static_cast<int64_t>(philox_seed),
-       static_cast<int64_t>(philox_offset),
-       128);
+
+  if (is_double) {
+    const TritonJITFunction &f = TritonJITFunction::get_instance(py_path, "fused_exponential_kernel_f64");
+    static AutotunedCall ac(py_path, "fused_exponential_kernel_f64", {"N"});
+    const triton_jit::Config &cfg = ac.lookup(TuneKey {N}, grid_fn, x_, N, lambd, eps_val, seed_i, offset_i);
+    int64_t block = get_int_kwarg(cfg, "BLOCK");
+    unsigned gx = (unsigned)((N + block * UNROLL - 1) / (block * UNROLL));
+    f.autotuned_call(raw_stream, gx, 1u, 1u, cfg, x_, N, lambd, eps_val, seed_i, offset_i);
+  } else {
+    const TritonJITFunction &f = TritonJITFunction::get_instance(py_path, "fused_exponential_kernel_f32");
+    static AutotunedCall ac(py_path, "fused_exponential_kernel_f32", {"N"});
+    const triton_jit::Config &cfg = ac.lookup(TuneKey {N}, grid_fn, x_, N, lambd, eps_val, seed_i, offset_i);
+    int64_t block = get_int_kwarg(cfg, "BLOCK");
+    unsigned gx = (unsigned)((N + block * UNROLL - 1) / (block * UNROLL));
+    f.autotuned_call(raw_stream, gx, 1u, 1u, cfg, x_, N, lambd, eps_val, seed_i, offset_i);
+  }
   if (!inplace) {
     self.copy_(x_);
     return self;

@@ -48,7 +48,7 @@ def mm_kernel_general(
     BLOCK_M: tl.constexpr,
     BLOCK_N: tl.constexpr,
     BLOCK_K: tl.constexpr,
-    GROUP_M: tl.constexpr,
+    GROUP_M: tl.constexpr = 8,
     IS_FP64: tl.constexpr = False,
 ):
     # matrix multiplication

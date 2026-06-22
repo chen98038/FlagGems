@@ -6,6 +6,7 @@
 #include <iostream>
 #include <tuple>
 #include "triton_jit/triton_jit_function.h"
+#include "utils/autotune_helper.h"
 
 namespace flag_gems {
 using namespace triton_jit;
@@ -199,22 +200,22 @@ void general_mm_tensor(
   backend::RawStreamType raw_stream = backend::getRawStream(stream);
 
   // CUDA/other path: use ops/mm.py with mm_kernel_general
+  const TritonJITFunction &f =
+      TritonJITFunction::get_instance(std::string(utils::get_flag_gems_src_path() / "ops" / "mm.py"),
+                                      "mm_kernel_general");
+
+#if defined(FLAGGEMS_USE_IX)
   const int BLOCK_M = 64;
   const int BLOCK_N = 128;
   const int BLOCK_K = 64;
   const int num_stages = 2;
   const int num_warps = 4;
   const int GROUP_M = 8;
-
-  const TritonJITFunction &f =
-      TritonJITFunction::get_instance(std::string(utils::get_flag_gems_src_path() / "ops" / "mm.py"),
-                                      "mm_kernel_general");
-
   unsigned int grid_x = cdiv(M, BLOCK_M) * cdiv(N, BLOCK_N);
-  f(/* stream = */ raw_stream,
-    /* grid_x = */ grid_x,
-    /* grid_y = */ 1,
-    /* grid_z = */ 1,
+  f(raw_stream,
+    grid_x,
+    1,
+    1,
     num_warps,
     num_stages,
     a,
@@ -229,10 +230,62 @@ void general_mm_tensor(
     b.stride(1),
     c.stride(0),
     c.stride(1),
-    /* BLOCK_M = */ BLOCK_M,
-    /* BLOCK_N = */ BLOCK_N,
-    /* BLOCK_K = */ BLOCK_K,
-    /* GROUP_M = */ GROUP_M);
+    BLOCK_M,
+    BLOCK_N,
+    BLOCK_K,
+    GROUP_M);
+#else
+  // mm_kernel_general @libtuner(key=["M","N","K","stride_am","stride_bk"]); tuned BLOCK_M/N/K.
+  // GROUP_M (=8, default) and IS_FP64 (=False, default) are filled by the bridge from
+  // the kernel's Python defaults and returned in the resolved Config.
+  static AutotunedCall ac(std::string(utils::get_flag_gems_src_path() / "ops" / "mm.py"),
+                          "mm_kernel_general",
+                          {"M", "N", "K", "stride_am", "stride_bk"});
+
+  auto grid_fn = [](const triton_jit::Config &cfg) -> std::tuple<unsigned, unsigned, unsigned> {
+    int64_t Mv = get_int_kwarg(cfg, "M");
+    int64_t Nv = get_int_kwarg(cfg, "N");
+    int64_t bm = get_int_kwarg(cfg, "BLOCK_M");
+    int64_t bn = get_int_kwarg(cfg, "BLOCK_N");
+    return {static_cast<unsigned>(((Mv + bm - 1) / bm) * ((Nv + bn - 1) / bn)), 1u, 1u};
+  };
+
+  const triton_jit::Config &cfg = ac.lookup(TuneKey {M, N, K, a.stride(0), b.stride(0)},
+                                            grid_fn,
+                                            a,
+                                            b,
+                                            c,
+                                            M,
+                                            N,
+                                            K,
+                                            a.stride(0),
+                                            a.stride(1),
+                                            b.stride(0),
+                                            b.stride(1),
+                                            c.stride(0),
+                                            c.stride(1));
+
+  const int64_t bm = get_int_kwarg(cfg, "BLOCK_M");
+  const int64_t bn = get_int_kwarg(cfg, "BLOCK_N");
+  unsigned int grid_x = static_cast<unsigned int>(cdiv(M, bm) * cdiv(N, bn));
+  f.autotuned_call(raw_stream,
+                   grid_x,
+                   1u,
+                   1u,
+                   cfg,
+                   a,
+                   b,
+                   c,
+                   M,
+                   N,
+                   K,
+                   a.stride(0),
+                   a.stride(1),
+                   b.stride(0),
+                   b.stride(1),
+                   c.stride(0),
+                   c.stride(1));
+#endif
   return;
 }
 

@@ -405,6 +405,9 @@ HEURISTICS_CONFIGS = {
         "ONE_TILE_PER_CTA": argmax_heur_one_tile_per_cta,
         "num_warps": argmax_heur_num_warps_inner,
     },
+    "argmax_inner_one_tile": {
+        "ONE_TILE_PER_CTA": argmax_heur_one_tile_per_cta,
+    },
     "argmin": {
         "BLOCK_M": argmin_heur_block_m,
         "BLOCK_N": argmin_heur_block_n,
@@ -462,6 +465,15 @@ HEURISTICS_CONFIGS = {
         "TILE_N": softmax_heur_tile_n_inner,
         "ONE_TILE_PER_CTA": softmax_heur_one_tile_per_cta,
         "num_warps": softmax_heur_num_warps_inner,
+    },
+    "softmax_inner_fwd": {
+        "ONE_TILE_PER_CTA": softmax_heur_one_tile_per_cta,
+        "num_warps": softmax_heur_num_warps_inner,
+    },
+    "softmax_non_inner_fwd": {
+        "TILE_N": softmax_heur_tile_n_non_inner,
+        "ONE_TILE_PER_CTA": softmax_heur_one_tile_per_cta,
+        "num_warps": softmax_heur_num_warps_non_inner,
     },
     "softmax_backward_non_inner": {
         "TILE_N": softmax_heur_tile_n_bwd_non_inner,

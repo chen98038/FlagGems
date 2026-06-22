@@ -1938,3 +1938,238 @@ grid_sample_3d_trilinear_tiled:
       BLOCK_W: 32
     num_warps: 32
     num_stages: 2
+fp8_matmul:
+  - META:
+      BLOCK_M: 64
+      BLOCK_N: 64
+      BLOCK_K: 128
+      GROUP_SIZE_M: 4
+    num_stages: 3
+    num_warps: 4
+  - META:
+      BLOCK_M: 64
+      BLOCK_N: 128
+      BLOCK_K: 128
+      GROUP_SIZE_M: 4
+    num_stages: 3
+    num_warps: 4
+  - META:
+      BLOCK_M: 128
+      BLOCK_N: 64
+      BLOCK_K: 128
+      GROUP_SIZE_M: 4
+    num_stages: 3
+    num_warps: 4
+  - META:
+      BLOCK_M: 128
+      BLOCK_N: 128
+      BLOCK_K: 64
+      GROUP_SIZE_M: 4
+    num_stages: 4
+    num_warps: 8
+  - META:
+      BLOCK_M: 64
+      BLOCK_N: 128
+      BLOCK_K: 64
+      GROUP_SIZE_M: 8
+    num_stages: 4
+    num_warps: 8
+  - META:
+      BLOCK_M: 128
+      BLOCK_N: 256
+      BLOCK_K: 64
+      GROUP_SIZE_M: 8
+    num_stages: 3
+    num_warps: 8
+argmax_inner:
+  - META:
+      TILE_N: 256
+    num_warps: 4
+  - META:
+      TILE_N: 512
+    num_warps: 4
+  - META:
+      TILE_N: 1024
+    num_warps: 8
+  - META:
+      TILE_N: 2048
+    num_warps: 8
+  - META:
+      TILE_N: 4096
+    num_warps: 16
+embedding:
+  - META: {}
+    num_warps: 2
+    num_stages: 1
+  - META: {}
+    num_warps: 4
+    num_stages: 1
+  - META: {}
+    num_warps: 8
+    num_stages: 1
+  - META: {}
+    num_warps: 4
+    num_stages: 2
+  - META: {}
+    num_warps: 8
+    num_stages: 2
+softmax_inner_fwd:
+  - META:
+      TILE_N: 32
+  - META:
+      TILE_N: 64
+  - META:
+      TILE_N: 128
+  - META:
+      TILE_N: 256
+  - META:
+      TILE_N: 1024
+softmax_non_inner_fwd:
+  - META:
+      TILE_K: 32
+  - META:
+      TILE_K: 64
+  - META:
+      TILE_K: 128
+  - META:
+      TILE_K: 256
+  - META:
+      TILE_K: 1024
+sum_full:
+  - META: {}
+    num_warps: 1
+    num_stages: 1
+  - META: {}
+    num_warps: 2
+    num_stages: 1
+  - META: {}
+    num_warps: 4
+    num_stages: 1
+  - META: {}
+    num_warps: 8
+    num_stages: 1
+  - META: {}
+    num_warps: 4
+    num_stages: 2
+  - META: {}
+    num_warps: 8
+    num_stages: 2
+  - META: {}
+    num_warps: 16
+    num_stages: 2
+zeros:
+  - gen: true
+    param_map:
+      META:
+        BLOCK_SIZE: block_m
+      num_warps: warps
+    block_m:
+      - 256
+      - 512
+      - 1024
+      - 2048
+      - 4096
+    warps:
+      - 4
+      - 8
+contiguous:
+  - META:
+      BLOCK_SIZE: 512
+    num_warps: 4
+    num_stages: 1
+  - META:
+      BLOCK_SIZE: 1024
+    num_warps: 4
+    num_stages: 1
+  - META:
+      BLOCK_SIZE: 1024
+    num_warps: 8
+    num_stages: 1
+  - META:
+      BLOCK_SIZE: 2048
+    num_warps: 8
+    num_stages: 1
+  - META:
+      BLOCK_SIZE: 2048
+    num_warps: 8
+    num_stages: 2
+  - META:
+      BLOCK_SIZE: 4096
+    num_warps: 8
+    num_stages: 2
+  - META:
+      BLOCK_SIZE: 8192
+    num_warps: 16
+    num_stages: 2
+cat_copy:
+  - META:
+      BLOCK_SIZE: 256
+  - META:
+      BLOCK_SIZE: 512
+  - META:
+      BLOCK_SIZE: 1024
+    num_warps: 4
+  - META:
+      BLOCK_SIZE: 2048
+    num_warps: 8
+  - META:
+      BLOCK_SIZE: 1024
+    num_warps: 8
+    num_stages: 2
+act_quant:
+  - META:
+      BLOCK_M: 16
+    num_warps: 4
+    num_stages: 1
+  - META:
+      BLOCK_M: 32
+    num_warps: 4
+    num_stages: 1
+  - META:
+      BLOCK_M: 32
+    num_warps: 8
+    num_stages: 2
+  - META:
+      BLOCK_M: 64
+    num_warps: 4
+    num_stages: 2
+  - META:
+      BLOCK_M: 64
+    num_warps: 8
+    num_stages: 1
+  - META:
+      BLOCK_M: 128
+    num_warps: 8
+    num_stages: 2
+gemma_rms_norm:
+  - META: {}
+    num_warps: 4
+    num_stages: 1
+  - META: {}
+    num_warps: 8
+    num_stages: 1
+  - META: {}
+    num_warps: 16
+    num_stages: 1
+  - META: {}
+    num_warps: 8
+    num_stages: 2
+  - META: {}
+    num_warps: 16
+    num_stages: 2
+fused_add_rms_norm:
+  - META: {}
+    num_warps: 4
+    num_stages: 1
+  - META: {}
+    num_warps: 8
+    num_stages: 1
+  - META: {}
+    num_warps: 16
+    num_stages: 1
+  - META: {}
+    num_warps: 8
+    num_stages: 2
+  - META: {}
+    num_warps: 16
+    num_stages: 2

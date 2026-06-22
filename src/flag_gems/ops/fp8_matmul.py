@@ -21,6 +21,9 @@ import torch
 import triton
 import triton.language as tl
 
+from flag_gems import runtime
+from flag_gems.utils import libentry, libtuner
+
 GROUP_SIZE = 128
 
 # Fixed config — best for M>=128 on H20 (covers majority of production shapes)
@@ -37,6 +40,11 @@ NUM_WARPS = 4
 #     print(f"[fp8_matmul][rank{rank}] {msg}", flush=True)
 
 
+@libentry()
+@libtuner(
+    configs=runtime.get_tuned_config("fp8_matmul"),
+    key=["M", "N", "K"],
+)
 @triton.jit
 def _fp8_matmul_kernel(
     A,
@@ -57,11 +65,11 @@ def _fp8_matmul_kernel(
     stride_as_k,
     stride_bs_n,
     stride_bs_k,
-    GROUP_K: tl.constexpr,
-    BLOCK_M: tl.constexpr,
-    BLOCK_N: tl.constexpr,
-    BLOCK_K: tl.constexpr,
-    GROUP_SIZE_M: tl.constexpr,
+    GROUP_K: tl.constexpr = GROUP_SIZE,
+    BLOCK_M: tl.constexpr = BLOCK_M,
+    BLOCK_N: tl.constexpr = BLOCK_N,
+    BLOCK_K: tl.constexpr = BLOCK_K,
+    GROUP_SIZE_M: tl.constexpr = GROUP_SIZE_M,
 ):
     pid = tl.program_id(0)
     num_pid_m = tl.cdiv(M, BLOCK_M)
@@ -153,7 +161,9 @@ def fp8_matmul(
 
     C = torch.empty((M, N), device=a.device, dtype=torch.bfloat16)
 
-    grid = (triton.cdiv(M, BLOCK_M) * triton.cdiv(N, BLOCK_N),)
+    grid = lambda meta: (
+        triton.cdiv(M, meta["BLOCK_M"]) * triton.cdiv(N, meta["BLOCK_N"]),
+    )
 
     _fp8_matmul_kernel[grid](
         a_2d,
@@ -175,12 +185,6 @@ def fp8_matmul(
         b_s.stride(0),
         b_s.stride(1),
         GROUP_K=GROUP_SIZE,
-        BLOCK_M=BLOCK_M,
-        BLOCK_N=BLOCK_N,
-        BLOCK_K=BLOCK_K,
-        GROUP_SIZE_M=GROUP_SIZE_M,
-        num_stages=NUM_STAGES,
-        num_warps=NUM_WARPS,
     )
 
     return C.view(out_shape)

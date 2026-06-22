@@ -5,6 +5,7 @@
 #include <iostream>
 #include "flag_gems/backend_utils.h"
 #include "triton_jit/triton_jit_function.h"
+#include "utils/autotune_helper.h"
 
 namespace flag_gems {
 using namespace triton_jit;
@@ -41,6 +42,7 @@ at::Tensor fp8_matmul(const at::Tensor& a,
   at::Tensor a_s_2d = a_s_new.view({M, -1});
   at::Tensor C = at::empty({M, N}, a.options().dtype(at::kBFloat16));
 
+#if defined(FLAGGEMS_USE_IX)
   const int BLOCK_M = 64;
   const int BLOCK_N = 64;
   const int BLOCK_K = 128;
@@ -88,6 +90,82 @@ at::Tensor fp8_matmul(const at::Tensor& a,
          BLOCK_N,
          BLOCK_K,
          GROUP_SIZE_M);
+#else
+  // _fp8_matmul_kernel is @libtuner(key=["M","N","K"]); tuned
+  // BLOCK_M/BLOCK_N/BLOCK_K/GROUP_SIZE_M. GROUP_K is a non-tuned
+  // constexpr with a Python default (=128, the fp8 scale group) so the
+  // bridge fills it; it must NOT be tuned (k_idx = k*BLOCK_K//GROUP_K).
+  const TritonJITFunction& f =
+      TritonJITFunction::get_instance(std::string(utils::get_flag_gems_src_path() / "ops" / "fp8_matmul.py"),
+                                      "_fp8_matmul_kernel");
+
+  c10::DeviceGuard guard(C.device());
+  backend::StreamType stream = backend::getCurrentStream();
+  backend::RawStreamType raw_stream = backend::getRawStream(stream);
+
+  static AutotunedCall ac(std::string(utils::get_flag_gems_src_path() / "ops" / "fp8_matmul.py"),
+                          "_fp8_matmul_kernel",
+                          {"M", "N", "K"});
+
+  // 5 tensors among args -> dtype-key count matches LibTuner.get_key.
+  auto grid_fn = [](const triton_jit::Config& c) -> std::tuple<unsigned, unsigned, unsigned> {
+    int64_t Mv = get_int_kwarg(c, "M");
+    int64_t Nv = get_int_kwarg(c, "N");
+    int64_t bm = get_int_kwarg(c, "BLOCK_M");
+    int64_t bn = get_int_kwarg(c, "BLOCK_N");
+    unsigned gx = static_cast<unsigned>(((Mv + bm - 1) / bm) * ((Nv + bn - 1) / bn));
+    return {gx, 1u, 1u};
+  };
+
+  const triton_jit::Config& cfg = ac.lookup(TuneKey {M, N, K},
+                                            grid_fn,
+                                            a_2d,
+                                            b,
+                                            C,
+                                            a_s_2d,
+                                            b_s_new,
+                                            static_cast<int>(M),
+                                            static_cast<int>(N),
+                                            static_cast<int>(K),
+                                            static_cast<int>(a_2d.stride(0)),
+                                            static_cast<int>(a_2d.stride(1)),
+                                            static_cast<int>(b.stride(0)),
+                                            static_cast<int>(b.stride(1)),
+                                            static_cast<int>(C.stride(0)),
+                                            static_cast<int>(C.stride(1)),
+                                            static_cast<int>(a_s_2d.stride(0)),
+                                            static_cast<int>(a_s_2d.stride(1)),
+                                            static_cast<int>(b_s_new.stride(0)),
+                                            static_cast<int>(b_s_new.stride(1)));
+
+  const int64_t bm = get_int_kwarg(cfg, "BLOCK_M");
+  const int64_t bn = get_int_kwarg(cfg, "BLOCK_N");
+  unsigned int grid_x = static_cast<unsigned int>(((M + bm - 1) / bm) * ((N + bn - 1) / bn));
+
+  f.autotuned_call(raw_stream,
+                   grid_x,
+                   1u,
+                   1u,
+                   cfg,
+                   a_2d,
+                   b,
+                   C,
+                   a_s_2d,
+                   b_s_new,
+                   static_cast<int>(M),
+                   static_cast<int>(N),
+                   static_cast<int>(K),
+                   static_cast<int>(a_2d.stride(0)),
+                   static_cast<int>(a_2d.stride(1)),
+                   static_cast<int>(b.stride(0)),
+                   static_cast<int>(b.stride(1)),
+                   static_cast<int>(C.stride(0)),
+                   static_cast<int>(C.stride(1)),
+                   static_cast<int>(a_s_2d.stride(0)),
+                   static_cast<int>(a_s_2d.stride(1)),
+                   static_cast<int>(b_s_new.stride(0)),
+                   static_cast<int>(b_s_new.stride(1)));
+#endif
 
   return C.view(out_shape);
 }

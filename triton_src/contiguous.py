@@ -1,7 +1,15 @@
 import triton
 import triton.language as tl
 
+from flag_gems import runtime
+from flag_gems.utils import libentry, libtuner
 
+
+@libentry()
+@libtuner(
+    configs=runtime.get_tuned_config("contiguous"),
+    key=["n_elements"],
+)
 @triton.jit
 def copy_kernel(
     inp_ptr,

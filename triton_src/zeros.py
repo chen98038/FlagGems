@@ -1,9 +1,16 @@
 import triton
 import triton.language as tl
 
+from flag_gems import runtime
+from flag_gems.utils import libentry, libtuner
 from flag_gems.utils import triton_lang_extension as tle
 
 
+@libentry()
+@libtuner(
+    configs=runtime.get_tuned_config("zeros"),
+    key=["n_elements"],
+)
 @triton.jit
 def zeros_kernel(
     output_ptr,

@@ -67,6 +67,22 @@ inline int64_t get_int_kwarg(const triton_jit::Config& cfg, std::string_view nam
   throw std::runtime_error(fmt::format("get_int_kwarg: no kwarg named '{}' in Config", name));
 }
 
+// Look up a bool-valued constexpr by name in a Config's kwargs. Throws if the
+// name is not present or its variant slot holds an int. Mirror of
+// get_int_kwarg for heuristic-derived bool constexprs (e.g. ONE_TILE_PER_CTA,
+// even_k) that a grid_fn or caller needs to read back.
+inline bool get_bool_kwarg(const triton_jit::Config& cfg, std::string_view name) {
+  for (const auto& [k, v] : cfg.kwargs) {
+    if (k == name) {
+      if (std::holds_alternative<bool>(v)) {
+        return std::get<bool>(v);
+      }
+      throw std::runtime_error(fmt::format("get_bool_kwarg: '{}' is int-typed, not bool", name));
+    }
+  }
+  throw std::runtime_error(fmt::format("get_bool_kwarg: no kwarg named '{}' in Config", name));
+}
+
 struct TuneKeyHash {
   size_t operator()(const TuneKey& k) const noexcept {
     // boost::hash_combine-style; adequate for cache lookup, not adversarial.

@@ -5,6 +5,7 @@
 #include "flag_gems/backend_utils.h"
 #include "torch/torch.h"
 #include "triton_jit/triton_jit_function.h"
+#include "utils/autotune_helper.h"
 
 #include <filesystem>
 #include "ATen/WrapDimUtils.h"
@@ -142,21 +143,23 @@ at::Tensor sum_dim(const at::Tensor &self,
     const TritonJITFunction &f =
         TritonJITFunction::get_instance(std::string(utils::get_flag_gems_src_path() / "ops" / "sum.py"),
                                         "sum_dim_kernel");
+    static AutotunedCall ac(std::string(utils::get_flag_gems_src_path() / "ops" / "sum.py"),
+                            "sum_dim_kernel",
+                            {"M", "N"});
     c10::DeviceGuard guard(out.device());
     backend::StreamType stream = backend::getCurrentStream();
     backend::RawStreamType raw_stream = backend::getRawStream(stream);
-    f(raw_stream,
-      num_blocks,
-      1,
-      1,
-      num_warps,
-      num_stages,
-      permuted_self,
-      out,
-      non_reduction_size,
-      reduction_size,
-      tile_m,
-      tile_n);
+    int64_t M = non_reduction_size;
+    int64_t N = reduction_size;
+    auto grid_fn = [M](const triton_jit::Config &c) -> std::tuple<unsigned, unsigned, unsigned> {
+      int64_t bm = get_int_kwarg(c, "BLOCK_M");
+      unsigned gx = (unsigned)((M + bm - 1) / bm);
+      return {gx, 1u, 1u};
+    };
+    const triton_jit::Config &cfg = ac.lookup(TuneKey {M, N}, grid_fn, permuted_self, out, M, N);
+    int64_t bm = get_int_kwarg(cfg, "BLOCK_M");
+    unsigned gx = (unsigned)((M + bm - 1) / bm);
+    f.autotuned_call(raw_stream, gx, 1u, 1u, cfg, permuted_self, out, M, N);
     return out;
   }
 }
